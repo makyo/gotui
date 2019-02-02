@@ -39,10 +39,10 @@ func layout(g *gotui.Gui) error {
 	return nil
 }
 
-func onresize(g *gocui.Gui, x, y int) error {
+func onresize(g *gotui.Gui, x, y int) error {
 	v, err := g.View("size")
 	if err != nil {
-		if err != gocui.ErrUnknownView {
+		if err != gotui.ErrUnknownView {
 			return err
 		}
 		return nil
