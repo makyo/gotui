@@ -5,6 +5,7 @@
 package gotui
 
 import (
+	"context"
 	"errors"
 
 	"github.com/nsf/termbox-go"
@@ -355,6 +356,17 @@ func (g *Gui) SetResizeFunc(handler func(g *Gui, x, y int) error) {
 // MainLoop runs the main loop until an error is returned. A successful
 // finish should return ErrQuit.
 func (g *Gui) MainLoop() error {
+	return g.MainLoopWithContext(nil)
+}
+
+// MainLoopWithContext runs the main loop until an error is returned or
+// the provided context is cancelled, in which case, it will return the
+// context error.
+func (g *Gui) MainLoopWithContext(ctx context.Context) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	go func() {
 		for {
 			g.tbEvents <- termbox.PollEvent()
@@ -375,6 +387,8 @@ func (g *Gui) MainLoop() error {
 	}
 	for {
 		select {
+		case <-ctx.Done():
+			return ctx.Err()
 		case ev := <-g.tbEvents:
 			if err := g.handleEvent(&ev); err != nil {
 				return err
@@ -384,7 +398,7 @@ func (g *Gui) MainLoop() error {
 				return err
 			}
 		}
-		if err := g.consumeevents(); err != nil {
+		if err := g.consumeevents(ctx); err != nil {
 			return err
 		}
 		if err := g.flush(); err != nil {
@@ -394,9 +408,11 @@ func (g *Gui) MainLoop() error {
 }
 
 // consumeevents handles the remaining events in the events pool.
-func (g *Gui) consumeevents() error {
+func (g *Gui) consumeevents(ctx context.Context) error {
 	for {
 		select {
+		case <-ctx.Done():
+			return ctx.Err()
 		case ev := <-g.tbEvents:
 			if err := g.handleEvent(&ev); err != nil {
 				return err
