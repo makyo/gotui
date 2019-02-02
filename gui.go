@@ -8,7 +8,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/nsf/termbox-go"
+	termbox "github.com/nsf/termbox-go"
 )
 
 var (
@@ -423,6 +423,9 @@ func (g *Gui) consumeevents(ctx context.Context) error {
 			}
 		default:
 			return nil
+		}
+		if err := g.flush(); err != nil {
+			return err
 		}
 	}
 }
