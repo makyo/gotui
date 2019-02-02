@@ -415,7 +415,11 @@ func (v *View) BufferLines() []string {
 	for i, l := range v.lines {
 		str := lineType(l).String()
 		str = strings.Replace(str, "\x00", " ", -1)
-		lines[i] = str
+		if i >= len(lines) {
+			lines = append(lines, str)
+		} else {
+			lines[i] = str
+		}
 	}
 	return lines
 }
@@ -437,7 +441,11 @@ func (v *View) ViewBufferLines() []string {
 	for i, l := range v.viewLines {
 		str := lineType(l.line).String()
 		str = strings.Replace(str, "\x00", " ", -1)
-		lines[i] = str
+		if i >= len(lines) {
+			lines = append(lines, str)
+		} else {
+			lines[i] = str
+		}
 	}
 	return lines
 }
