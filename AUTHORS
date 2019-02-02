@@ -1,12 +1,15 @@
-# This is the official list of gocui authors for copyright purposes.
+# This is the official list of gotui authors for copyright purposes.
 
 # Names should be added to this file as
 #	Name or Organization <email address> contribution
 #		Contribution
 # The email address is not required for organizations.
 
-Roi Martin <jroi.martin@gmail.com>
+Madison Scott-Clary <makyo@drab-makyo.com>
 	Main developer
+
+Roi Martin <jroi.martin@gmail.com>
+	Original developer
 
 Ryan Sullivan <kayoticsully@gmail.com>
 	Toggleable view frames
@@ -28,3 +31,6 @@ Henri Koski <henri.t.koski@gmail.com>
 
 Dustin Willis Webber <dustin.webber@gmail.com>
 	256-colors output mode support
+
+Madison Scott-Clary <makyo@drab-makyo.com>
+	Main developer

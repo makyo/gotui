@@ -1,8 +1,8 @@
-# GOCUI - Go Console User Interface
+# GOTUI - Go Terminal User Interface
 
-[![GoDoc](https://godoc.org/github.com/jroimartin/gocui?status.svg)](https://godoc.org/github.com/jroimartin/gocui)
+[![GoDoc](https://godoc.org/github.com/makyo/gotui?status.svg)](https://godoc.org/github.com/makyo/gotui)
 
-Minimalist Go package aimed at creating Console User Interfaces.
+Lightweight Go package for creating terminal user interfaces based on [gocui](https://github.com/jroimartin/gocui)
 
 ## Features
 
@@ -21,7 +21,7 @@ Minimalist Go package aimed at creating Console User Interfaces.
 Execute:
 
 ```
-$ go get github.com/jroimartin/gocui
+$ go get github.com/makyo/gotui
 ```
 
 ## Documentation
@@ -29,10 +29,10 @@ $ go get github.com/jroimartin/gocui
 Execute:
 
 ```
-$ go doc github.com/jroimartin/gocui
+$ go doc github.com/makyo/gotui
 ```
 
-Or visit [godoc.org](https://godoc.org/github.com/jroimartin/gocui) to read it
+Or visit [godoc.org](https://godoc.org/github.com/makyo/gotui) to read it
 online.
 
 ## Example
@@ -44,11 +44,11 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/jroimartin/gocui"
+	"github.com/makyo/gotui"
 )
 
 func main() {
-	g, err := gocui.NewGui(gocui.OutputNormal)
+	g, err := gotui.NewGui(gotui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -56,19 +56,19 @@ func main() {
 
 	g.SetManagerFunc(layout)
 
-	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
+	if err := g.SetKeybinding("", gotui.KeyCtrlC, gotui.ModNone, quit); err != nil {
 		log.Panicln(err)
 	}
 
-	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
+	if err := g.MainLoop(); err != nil && err != gotui.ErrQuit {
 		log.Panicln(err)
 	}
 }
 
-func layout(g *gocui.Gui) error {
+func layout(g *gotui.Gui) error {
 	maxX, maxY := g.Size()
 	if v, err := g.SetView("hello", maxX/2-7, maxY/2, maxX/2+7, maxY/2+2); err != nil {
-		if err != gocui.ErrUnknownView {
+		if err != gotui.ErrUnknownView {
 			return err
 		}
 		fmt.Fprintln(v, "Hello world!")
@@ -76,35 +76,11 @@ func layout(g *gocui.Gui) error {
 	return nil
 }
 
-func quit(g *gocui.Gui, v *gocui.View) error {
-	return gocui.ErrQuit
+func quit(g *gotui.Gui, v *gotui.View) error {
+	return gotui.ErrQuit
 }
 ```
 
-## Screenshots
+# More information
 
-![r2cui](https://cloud.githubusercontent.com/assets/1223476/19418932/63645052-93ce-11e6-867c-da5e97e37237.png)
-
-![_examples/demo.go](https://cloud.githubusercontent.com/assets/1223476/5992750/720b84f0-aa36-11e4-88ec-296fa3247b52.png)
-
-![_examples/dynamic.go](https://cloud.githubusercontent.com/assets/1223476/5992751/76ad5cc2-aa36-11e4-8204-6a90269db827.png)
-
-## Projects using gocui
-
-* [komanda-cli](https://github.com/mephux/komanda-cli): IRC Client For Developers.
-* [vuls](https://github.com/future-architect/vuls): Agentless vulnerability scanner for Linux/FreeBSD.
-* [wuzz](https://github.com/asciimoo/wuzz): Interactive cli tool for HTTP inspection.
-* [httplab](https://github.com/gchaincl/httplab): Interactive web server.
-* [domainr](https://github.com/MichaelThessel/domainr): Tool that checks the availability of domains based on keywords.
-* [gotime](https://github.com/nanohard/gotime): Time tracker for projects and tasks.
-* [claws](https://github.com/thehowl/claws): Interactive command line client for testing websockets.
-* [terminews](http://github.com/antavelos/terminews): Terminal based RSS reader.
-* [diagram](https://github.com/esimov/diagram): Tool to convert ascii arts into hand drawn diagrams.
-* [pody](https://github.com/JulienBreux/pody): CLI app to manage Pods in a Kubernetes cluster.
-* [kubexp](https://github.com/alitari/kubexp): Kubernetes client.
-* [kcli](https://github.com/cswank/kcli): Tool for inspecting kafka topics/partitions/messages.
-* [fac](https://github.com/mkchoi212/fac): git merge conflict resolver
-* [jsonui](https://github.com/gulyasm/jsonui): Interactive JSON explorer for your terminal.
-* [cointop](https://github.com/miguelmota/cointop): Interactive terminal based UI application for tracking cryptocurrencies.
-
-Note: if your project is not listed here, let us know! :)
+For more information, please see the lovely [gocui](https://github.com/jroimartin/gocui) package this was based on.

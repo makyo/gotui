@@ -1,6 +1,6 @@
-// Copyright 2014 The gocui Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// Copyright 2014 The gotui Authors. All rights reserved.
+// Use of this source code is governed by an MIT license.
+// The license can be found in the LICENSE file.
 
 package main
 
@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/jroimartin/gocui"
+	"github.com/makyo/gotui"
 )
 
 var (
@@ -16,14 +16,14 @@ var (
 	active  = 0
 )
 
-func setCurrentViewOnTop(g *gocui.Gui, name string) (*gocui.View, error) {
+func setCurrentViewOnTop(g *gotui.Gui, name string) (*gotui.View, error) {
 	if _, err := g.SetCurrentView(name); err != nil {
 		return nil, err
 	}
 	return g.SetViewOnTop(name)
 }
 
-func nextView(g *gocui.Gui, v *gocui.View) error {
+func nextView(g *gotui.Gui, v *gotui.View) error {
 	nextIndex := (active + 1) % len(viewArr)
 	name := viewArr[nextIndex]
 
@@ -47,10 +47,10 @@ func nextView(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func layout(g *gocui.Gui) error {
+func layout(g *gotui.Gui) error {
 	maxX, maxY := g.Size()
 	if v, err := g.SetView("v1", 0, 0, maxX/2-1, maxY/2-1); err != nil {
-		if err != gocui.ErrUnknownView {
+		if err != gotui.ErrUnknownView {
 			return err
 		}
 		v.Title = "v1 (editable)"
@@ -63,7 +63,7 @@ func layout(g *gocui.Gui) error {
 	}
 
 	if v, err := g.SetView("v2", maxX/2-1, 0, maxX-1, maxY/2-1); err != nil {
-		if err != gocui.ErrUnknownView {
+		if err != gotui.ErrUnknownView {
 			return err
 		}
 		v.Title = "v2"
@@ -71,7 +71,7 @@ func layout(g *gocui.Gui) error {
 		v.Autoscroll = true
 	}
 	if v, err := g.SetView("v3", 0, maxY/2-1, maxX/2-1, maxY-1); err != nil {
-		if err != gocui.ErrUnknownView {
+		if err != gotui.ErrUnknownView {
 			return err
 		}
 		v.Title = "v3"
@@ -80,7 +80,7 @@ func layout(g *gocui.Gui) error {
 		fmt.Fprint(v, "Press TAB to change current view")
 	}
 	if v, err := g.SetView("v4", maxX/2, maxY/2, maxX-1, maxY-1); err != nil {
-		if err != gocui.ErrUnknownView {
+		if err != gotui.ErrUnknownView {
 			return err
 		}
 		v.Title = "v4 (editable)"
@@ -89,12 +89,12 @@ func layout(g *gocui.Gui) error {
 	return nil
 }
 
-func quit(g *gocui.Gui, v *gocui.View) error {
-	return gocui.ErrQuit
+func quit(g *gotui.Gui, v *gotui.View) error {
+	return gotui.ErrQuit
 }
 
 func main() {
-	g, err := gocui.NewGui(gocui.OutputNormal)
+	g, err := gotui.NewGui(gotui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -102,18 +102,18 @@ func main() {
 
 	g.Highlight = true
 	g.Cursor = true
-	g.SelFgColor = gocui.ColorGreen
+	g.SelFgColor = gotui.ColorGreen
 
 	g.SetManagerFunc(layout)
 
-	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
+	if err := g.SetKeybinding("", gotui.KeyCtrlC, gotui.ModNone, quit); err != nil {
 		log.Panicln(err)
 	}
-	if err := g.SetKeybinding("", gocui.KeyTab, gocui.ModNone, nextView); err != nil {
+	if err := g.SetKeybinding("", gotui.KeyTab, gotui.ModNone, nextView); err != nil {
 		log.Panicln(err)
 	}
 
-	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
+	if err := g.MainLoop(); err != nil && err != gotui.ErrQuit {
 		log.Panicln(err)
 	}
 }

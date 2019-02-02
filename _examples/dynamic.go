@@ -1,6 +1,6 @@
-// Copyright 2014 The gocui Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// Copyright 2014 The gotui Authors. All rights reserved.
+// Use of this source code is governed by an MIT license.
+// The license can be found in the LICENSE file.
 
 package main
 
@@ -9,7 +9,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/jroimartin/gocui"
+	"github.com/makyo/gotui"
 )
 
 const delta = 1
@@ -21,14 +21,14 @@ var (
 )
 
 func main() {
-	g, err := gocui.NewGui(gocui.OutputNormal)
+	g, err := gotui.NewGui(gotui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)
 	}
 	defer g.Close()
 
 	g.Highlight = true
-	g.SelFgColor = gocui.ColorRed
+	g.SelFgColor = gotui.ColorRed
 
 	g.SetManagerFunc(layout)
 
@@ -39,16 +39,16 @@ func main() {
 		log.Panicln(err)
 	}
 
-	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
+	if err := g.MainLoop(); err != nil && err != gotui.ErrQuit {
 		log.Panicln(err)
 	}
 }
 
-func layout(g *gocui.Gui) error {
+func layout(g *gotui.Gui) error {
 	maxX, _ := g.Size()
 	v, err := g.SetView("help", maxX-25, 0, maxX-1, 9)
 	if err != nil {
-		if err != gocui.ErrUnknownView {
+		if err != gotui.ErrUnknownView {
 			return err
 		}
 		fmt.Fprintln(v, "KEYBINDINGS")
@@ -63,64 +63,64 @@ func layout(g *gocui.Gui) error {
 	return nil
 }
 
-func initKeybindings(g *gocui.Gui) error {
-	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone,
-		func(g *gocui.Gui, v *gocui.View) error {
-			return gocui.ErrQuit
+func initKeybindings(g *gotui.Gui) error {
+	if err := g.SetKeybinding("", gotui.KeyCtrlC, gotui.ModNone,
+		func(g *gotui.Gui, v *gotui.View) error {
+			return gotui.ErrQuit
 		}); err != nil {
 		return err
 	}
-	if err := g.SetKeybinding("", gocui.KeySpace, gocui.ModNone,
-		func(g *gocui.Gui, v *gocui.View) error {
+	if err := g.SetKeybinding("", gotui.KeySpace, gotui.ModNone,
+		func(g *gotui.Gui, v *gotui.View) error {
 			return newView(g)
 		}); err != nil {
 		return err
 	}
-	if err := g.SetKeybinding("", gocui.KeyBackspace2, gocui.ModNone,
-		func(g *gocui.Gui, v *gocui.View) error {
+	if err := g.SetKeybinding("", gotui.KeyBackspace2, gotui.ModNone,
+		func(g *gotui.Gui, v *gotui.View) error {
 			return delView(g)
 		}); err != nil {
 		return err
 	}
-	if err := g.SetKeybinding("", gocui.KeyTab, gocui.ModNone,
-		func(g *gocui.Gui, v *gocui.View) error {
+	if err := g.SetKeybinding("", gotui.KeyTab, gotui.ModNone,
+		func(g *gotui.Gui, v *gotui.View) error {
 			return nextView(g, true)
 		}); err != nil {
 		return err
 	}
-	if err := g.SetKeybinding("", gocui.KeyArrowLeft, gocui.ModNone,
-		func(g *gocui.Gui, v *gocui.View) error {
+	if err := g.SetKeybinding("", gotui.KeyArrowLeft, gotui.ModNone,
+		func(g *gotui.Gui, v *gotui.View) error {
 			return moveView(g, v, -delta, 0)
 		}); err != nil {
 		return err
 	}
-	if err := g.SetKeybinding("", gocui.KeyArrowRight, gocui.ModNone,
-		func(g *gocui.Gui, v *gocui.View) error {
+	if err := g.SetKeybinding("", gotui.KeyArrowRight, gotui.ModNone,
+		func(g *gotui.Gui, v *gotui.View) error {
 			return moveView(g, v, delta, 0)
 		}); err != nil {
 		return err
 	}
-	if err := g.SetKeybinding("", gocui.KeyArrowDown, gocui.ModNone,
-		func(g *gocui.Gui, v *gocui.View) error {
+	if err := g.SetKeybinding("", gotui.KeyArrowDown, gotui.ModNone,
+		func(g *gotui.Gui, v *gotui.View) error {
 			return moveView(g, v, 0, delta)
 		}); err != nil {
 		return err
 	}
-	if err := g.SetKeybinding("", gocui.KeyArrowUp, gocui.ModNone,
-		func(g *gocui.Gui, v *gocui.View) error {
+	if err := g.SetKeybinding("", gotui.KeyArrowUp, gotui.ModNone,
+		func(g *gotui.Gui, v *gotui.View) error {
 			return moveView(g, v, 0, -delta)
 		}); err != nil {
 		return err
 	}
-	if err := g.SetKeybinding("", 't', gocui.ModNone,
-		func(g *gocui.Gui, v *gocui.View) error {
+	if err := g.SetKeybinding("", 't', gotui.ModNone,
+		func(g *gotui.Gui, v *gotui.View) error {
 			_, err := g.SetViewOnTop(views[curView])
 			return err
 		}); err != nil {
 		return err
 	}
-	if err := g.SetKeybinding("", 'b', gocui.ModNone,
-		func(g *gocui.Gui, v *gocui.View) error {
+	if err := g.SetKeybinding("", 'b', gotui.ModNone,
+		func(g *gotui.Gui, v *gotui.View) error {
 			_, err := g.SetViewOnBottom(views[curView])
 			return err
 		}); err != nil {
@@ -129,12 +129,12 @@ func initKeybindings(g *gocui.Gui) error {
 	return nil
 }
 
-func newView(g *gocui.Gui) error {
+func newView(g *gotui.Gui) error {
 	maxX, maxY := g.Size()
 	name := fmt.Sprintf("v%v", idxView)
 	v, err := g.SetView(name, maxX/2-5, maxY/2-5, maxX/2+5, maxY/2+5)
 	if err != nil {
-		if err != gocui.ErrUnknownView {
+		if err != gotui.ErrUnknownView {
 			return err
 		}
 		v.Wrap = true
@@ -150,7 +150,7 @@ func newView(g *gocui.Gui) error {
 	return nil
 }
 
-func delView(g *gocui.Gui) error {
+func delView(g *gotui.Gui) error {
 	if len(views) <= 1 {
 		return nil
 	}
@@ -163,7 +163,7 @@ func delView(g *gocui.Gui) error {
 	return nextView(g, false)
 }
 
-func nextView(g *gocui.Gui, disableCurrent bool) error {
+func nextView(g *gotui.Gui, disableCurrent bool) error {
 	next := curView + 1
 	if next > len(views)-1 {
 		next = 0
@@ -177,7 +177,7 @@ func nextView(g *gocui.Gui, disableCurrent bool) error {
 	return nil
 }
 
-func moveView(g *gocui.Gui, v *gocui.View, dx, dy int) error {
+func moveView(g *gotui.Gui, v *gotui.View, dx, dy int) error {
 	name := v.Name()
 	x0, y0, x1, y1, err := g.ViewPosition(name)
 	if err != nil {

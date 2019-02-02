@@ -1,6 +1,6 @@
-// Copyright 2014 The gocui Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// Copyright 2014 The gotui Authors. All rights reserved.
+// Use of this source code is governed by an MIT license.
+// The license can be found in the LICENSE file.
 
 package main
 
@@ -11,10 +11,10 @@ import (
 	"log"
 	"strings"
 
-	"github.com/jroimartin/gocui"
+	"github.com/makyo/gotui"
 )
 
-func nextView(g *gocui.Gui, v *gocui.View) error {
+func nextView(g *gotui.Gui, v *gotui.View) error {
 	if v == nil || v.Name() == "side" {
 		_, err := g.SetCurrentView("main")
 		return err
@@ -23,7 +23,7 @@ func nextView(g *gocui.Gui, v *gocui.View) error {
 	return err
 }
 
-func cursorDown(g *gocui.Gui, v *gocui.View) error {
+func cursorDown(g *gotui.Gui, v *gotui.View) error {
 	if v != nil {
 		cx, cy := v.Cursor()
 		if err := v.SetCursor(cx, cy+1); err != nil {
@@ -36,7 +36,7 @@ func cursorDown(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func cursorUp(g *gocui.Gui, v *gocui.View) error {
+func cursorUp(g *gotui.Gui, v *gotui.View) error {
 	if v != nil {
 		ox, oy := v.Origin()
 		cx, cy := v.Cursor()
@@ -49,7 +49,7 @@ func cursorUp(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func getLine(g *gocui.Gui, v *gocui.View) error {
+func getLine(g *gotui.Gui, v *gotui.View) error {
 	var l string
 	var err error
 
@@ -60,7 +60,7 @@ func getLine(g *gocui.Gui, v *gocui.View) error {
 
 	maxX, maxY := g.Size()
 	if v, err := g.SetView("msg", maxX/2-30, maxY/2, maxX/2+30, maxY/2+2); err != nil {
-		if err != gocui.ErrUnknownView {
+		if err != gotui.ErrUnknownView {
 			return err
 		}
 		fmt.Fprintln(v, l)
@@ -71,7 +71,7 @@ func getLine(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func delMsg(g *gocui.Gui, v *gocui.View) error {
+func delMsg(g *gotui.Gui, v *gotui.View) error {
 	if err := g.DeleteView("msg"); err != nil {
 		return err
 	}
@@ -81,44 +81,44 @@ func delMsg(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func quit(g *gocui.Gui, v *gocui.View) error {
-	return gocui.ErrQuit
+func quit(g *gotui.Gui, v *gotui.View) error {
+	return gotui.ErrQuit
 }
 
-func keybindings(g *gocui.Gui) error {
-	if err := g.SetKeybinding("side", gocui.KeyCtrlSpace, gocui.ModNone, nextView); err != nil {
+func keybindings(g *gotui.Gui) error {
+	if err := g.SetKeybinding("side", gotui.KeyCtrlSpace, gotui.ModNone, nextView); err != nil {
 		return err
 	}
-	if err := g.SetKeybinding("main", gocui.KeyCtrlSpace, gocui.ModNone, nextView); err != nil {
+	if err := g.SetKeybinding("main", gotui.KeyCtrlSpace, gotui.ModNone, nextView); err != nil {
 		return err
 	}
-	if err := g.SetKeybinding("side", gocui.KeyArrowDown, gocui.ModNone, cursorDown); err != nil {
+	if err := g.SetKeybinding("side", gotui.KeyArrowDown, gotui.ModNone, cursorDown); err != nil {
 		return err
 	}
-	if err := g.SetKeybinding("side", gocui.KeyArrowUp, gocui.ModNone, cursorUp); err != nil {
+	if err := g.SetKeybinding("side", gotui.KeyArrowUp, gotui.ModNone, cursorUp); err != nil {
 		return err
 	}
-	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
+	if err := g.SetKeybinding("", gotui.KeyCtrlC, gotui.ModNone, quit); err != nil {
 		return err
 	}
-	if err := g.SetKeybinding("side", gocui.KeyEnter, gocui.ModNone, getLine); err != nil {
+	if err := g.SetKeybinding("side", gotui.KeyEnter, gotui.ModNone, getLine); err != nil {
 		return err
 	}
-	if err := g.SetKeybinding("msg", gocui.KeyEnter, gocui.ModNone, delMsg); err != nil {
+	if err := g.SetKeybinding("msg", gotui.KeyEnter, gotui.ModNone, delMsg); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("main", gocui.KeyCtrlS, gocui.ModNone, saveMain); err != nil {
+	if err := g.SetKeybinding("main", gotui.KeyCtrlS, gotui.ModNone, saveMain); err != nil {
 		return err
 	}
-	if err := g.SetKeybinding("main", gocui.KeyCtrlW, gocui.ModNone, saveVisualMain); err != nil {
+	if err := g.SetKeybinding("main", gotui.KeyCtrlW, gotui.ModNone, saveVisualMain); err != nil {
 		return err
 	}
 	return nil
 }
 
-func saveMain(g *gocui.Gui, v *gocui.View) error {
-	f, err := ioutil.TempFile("", "gocui_demo_")
+func saveMain(g *gotui.Gui, v *gotui.View) error {
+	f, err := ioutil.TempFile("", "gotui_demo_")
 	if err != nil {
 		return err
 	}
@@ -143,8 +143,8 @@ func saveMain(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func saveVisualMain(g *gocui.Gui, v *gocui.View) error {
-	f, err := ioutil.TempFile("", "gocui_demo_")
+func saveVisualMain(g *gotui.Gui, v *gotui.View) error {
+	f, err := ioutil.TempFile("", "gotui_demo_")
 	if err != nil {
 		return err
 	}
@@ -157,15 +157,15 @@ func saveVisualMain(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func layout(g *gocui.Gui) error {
+func layout(g *gotui.Gui) error {
 	maxX, maxY := g.Size()
 	if v, err := g.SetView("side", -1, -1, 30, maxY); err != nil {
-		if err != gocui.ErrUnknownView {
+		if err != gotui.ErrUnknownView {
 			return err
 		}
 		v.Highlight = true
-		v.SelBgColor = gocui.ColorGreen
-		v.SelFgColor = gocui.ColorBlack
+		v.SelBgColor = gotui.ColorGreen
+		v.SelFgColor = gotui.ColorBlack
 		fmt.Fprintln(v, "Item 1")
 		fmt.Fprintln(v, "Item 2")
 		fmt.Fprintln(v, "Item 3")
@@ -173,7 +173,7 @@ func layout(g *gocui.Gui) error {
 		fmt.Fprint(v, "deleted\rItem 4\nItem 5")
 	}
 	if v, err := g.SetView("main", 30, -1, maxX, maxY); err != nil {
-		if err != gocui.ErrUnknownView {
+		if err != gotui.ErrUnknownView {
 			return err
 		}
 		b, err := ioutil.ReadFile("Mark.Twain-Tom.Sawyer.txt")
@@ -191,7 +191,7 @@ func layout(g *gocui.Gui) error {
 }
 
 func main() {
-	g, err := gocui.NewGui(gocui.OutputNormal)
+	g, err := gotui.NewGui(gotui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -205,7 +205,7 @@ func main() {
 		log.Panicln(err)
 	}
 
-	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
+	if err := g.MainLoop(); err != nil && err != gotui.ErrQuit {
 		log.Panicln(err)
 	}
 }

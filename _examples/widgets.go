@@ -1,6 +1,6 @@
-// Copyright 2014 The gocui Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// Copyright 2014 The gotui Authors. All rights reserved.
+// Use of this source code is governed by an MIT license.
+// The license can be found in the LICENSE file.
 
 package main
 
@@ -10,7 +10,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/jroimartin/gocui"
+	"github.com/makyo/gotui"
 )
 
 const delta = 0.2
@@ -37,10 +37,10 @@ func NewHelpWidget(name string, x, y int, body string) *HelpWidget {
 	return &HelpWidget{name: name, x: x, y: y, w: w, h: h, body: body}
 }
 
-func (w *HelpWidget) Layout(g *gocui.Gui) error {
+func (w *HelpWidget) Layout(g *gotui.Gui) error {
 	v, err := g.SetView(w.name, w.x, w.y, w.x+w.w, w.y+w.h)
 	if err != nil {
-		if err != gocui.ErrUnknownView {
+		if err != gotui.ErrUnknownView {
 			return err
 		}
 		fmt.Fprint(v, w.body)
@@ -71,9 +71,9 @@ func (w *StatusbarWidget) Val() float64 {
 	return w.val
 }
 
-func (w *StatusbarWidget) Layout(g *gocui.Gui) error {
+func (w *StatusbarWidget) Layout(g *gotui.Gui) error {
 	v, err := g.SetView(w.name, w.x, w.y, w.x+w.w, w.y+2)
-	if err != nil && err != gocui.ErrUnknownView {
+	if err != nil && err != gotui.ErrUnknownView {
 		return err
 	}
 	v.Clear()
@@ -88,23 +88,23 @@ type ButtonWidget struct {
 	x, y    int
 	w       int
 	label   string
-	handler func(g *gocui.Gui, v *gocui.View) error
+	handler func(g *gotui.Gui, v *gotui.View) error
 }
 
-func NewButtonWidget(name string, x, y int, label string, handler func(g *gocui.Gui, v *gocui.View) error) *ButtonWidget {
+func NewButtonWidget(name string, x, y int, label string, handler func(g *gotui.Gui, v *gotui.View) error) *ButtonWidget {
 	return &ButtonWidget{name: name, x: x, y: y, w: len(label) + 1, label: label, handler: handler}
 }
 
-func (w *ButtonWidget) Layout(g *gocui.Gui) error {
+func (w *ButtonWidget) Layout(g *gotui.Gui) error {
 	v, err := g.SetView(w.name, w.x, w.y, w.x+w.w, w.y+2)
 	if err != nil {
-		if err != gocui.ErrUnknownView {
+		if err != gotui.ErrUnknownView {
 			return err
 		}
 		if _, err := g.SetCurrentView(w.name); err != nil {
 			return err
 		}
-		if err := g.SetKeybinding(w.name, gocui.KeyEnter, gocui.ModNone, w.handler); err != nil {
+		if err := g.SetKeybinding(w.name, gotui.KeyEnter, gotui.ModNone, w.handler); err != nil {
 			return err
 		}
 		fmt.Fprint(v, w.label)
@@ -113,14 +113,14 @@ func (w *ButtonWidget) Layout(g *gocui.Gui) error {
 }
 
 func main() {
-	g, err := gocui.NewGui(gocui.OutputNormal)
+	g, err := gotui.NewGui(gotui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)
 	}
 	defer g.Close()
 
 	g.Highlight = true
-	g.SelFgColor = gocui.ColorRed
+	g.SelFgColor = gotui.ColorRed
 
 	help := NewHelpWidget("help", 1, 1, helpText)
 	status := NewStatusbarWidget("status", 1, 7, 50)
@@ -128,23 +128,23 @@ func main() {
 	butup := NewButtonWidget("butup", 58, 7, "UP", statusUp(status))
 	g.SetManager(help, status, butdown, butup)
 
-	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
+	if err := g.SetKeybinding("", gotui.KeyCtrlC, gotui.ModNone, quit); err != nil {
 		log.Panicln(err)
 	}
-	if err := g.SetKeybinding("", gocui.KeyTab, gocui.ModNone, toggleButton); err != nil {
+	if err := g.SetKeybinding("", gotui.KeyTab, gotui.ModNone, toggleButton); err != nil {
 		log.Panicln(err)
 	}
 
-	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
+	if err := g.MainLoop(); err != nil && err != gotui.ErrQuit {
 		log.Panicln(err)
 	}
 }
 
-func quit(g *gocui.Gui, v *gocui.View) error {
-	return gocui.ErrQuit
+func quit(g *gotui.Gui, v *gotui.View) error {
+	return gotui.ErrQuit
 }
 
-func toggleButton(g *gocui.Gui, v *gocui.View) error {
+func toggleButton(g *gotui.Gui, v *gotui.View) error {
 	nextview := "butdown"
 	if v != nil && v.Name() == "butdown" {
 		nextview = "butup"
@@ -153,14 +153,14 @@ func toggleButton(g *gocui.Gui, v *gocui.View) error {
 	return err
 }
 
-func statusUp(status *StatusbarWidget) func(g *gocui.Gui, v *gocui.View) error {
-	return func(g *gocui.Gui, v *gocui.View) error {
+func statusUp(status *StatusbarWidget) func(g *gotui.Gui, v *gotui.View) error {
+	return func(g *gotui.Gui, v *gotui.View) error {
 		return statusSet(status, delta)
 	}
 }
 
-func statusDown(status *StatusbarWidget) func(g *gocui.Gui, v *gocui.View) error {
-	return func(g *gocui.Gui, v *gocui.View) error {
+func statusDown(status *StatusbarWidget) func(g *gotui.Gui, v *gotui.View) error {
+	return func(g *gotui.Gui, v *gotui.View) error {
 		return statusSet(status, -delta)
 	}
 }

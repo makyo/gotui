@@ -1,6 +1,6 @@
-// Copyright 2014 The gocui Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// Copyright 2014 The gotui Authors. All rights reserved.
+// Use of this source code is governed by an MIT license.
+// The license can be found in the LICENSE file.
 
 package main
 
@@ -9,7 +9,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/jroimartin/gocui"
+	"github.com/makyo/gotui"
 )
 
 type Label struct {
@@ -33,10 +33,10 @@ func NewLabel(name string, body string) *Label {
 	return &Label{name: name, w: w, h: h, body: body}
 }
 
-func (w *Label) Layout(g *gocui.Gui) error {
+func (w *Label) Layout(g *gotui.Gui) error {
 	v, err := g.SetView(w.name, 0, 0, w.w, w.h)
 	if err != nil {
-		if err != gocui.ErrUnknownView {
+		if err != gotui.ErrUnknownView {
 			return err
 		}
 		fmt.Fprint(v, w.body)
@@ -44,13 +44,13 @@ func (w *Label) Layout(g *gocui.Gui) error {
 	return nil
 }
 
-func flowLayout(g *gocui.Gui) error {
+func flowLayout(g *gotui.Gui) error {
 	views := g.Views()
 	x := 0
 	for _, v := range views {
 		w, h := v.Size()
 		_, err := g.SetView(v.Name(), x, 0, x+w+1, h+1)
-		if err != nil && err != gocui.ErrUnknownView {
+		if err != nil && err != gotui.ErrUnknownView {
 			return err
 		}
 		x += w + 2
@@ -59,7 +59,7 @@ func flowLayout(g *gocui.Gui) error {
 }
 
 func main() {
-	g, err := gocui.NewGui(gocui.OutputNormal)
+	g, err := gotui.NewGui(gotui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -70,18 +70,18 @@ func main() {
 	l3 := NewLabel("l3", "a")
 	l4 := NewLabel("l4", "flow\nlayout")
 	l5 := NewLabel("l5", "!")
-	fl := gocui.ManagerFunc(flowLayout)
+	fl := gotui.ManagerFunc(flowLayout)
 	g.SetManager(l1, l2, l3, l4, l5, fl)
 
-	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
+	if err := g.SetKeybinding("", gotui.KeyCtrlC, gotui.ModNone, quit); err != nil {
 		log.Panicln(err)
 	}
 
-	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
+	if err := g.MainLoop(); err != nil && err != gotui.ErrQuit {
 		log.Panicln(err)
 	}
 }
 
-func quit(g *gocui.Gui, v *gocui.View) error {
-	return gocui.ErrQuit
+func quit(g *gotui.Gui, v *gotui.View) error {
+	return gotui.ErrQuit
 }

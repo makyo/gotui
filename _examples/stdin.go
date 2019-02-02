@@ -1,6 +1,6 @@
-// Copyright 2015 The gocui Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// Copyright 2014 The gotui Authors. All rights reserved.
+// Use of this source code is governed by an MIT license.
+// The license can be found in the LICENSE file.
 
 package main
 
@@ -11,11 +11,11 @@ import (
 	"log"
 	"os"
 
-	"github.com/jroimartin/gocui"
+	"github.com/makyo/gotui"
 )
 
 func main() {
-	g, err := gocui.NewGui(gocui.OutputNormal)
+	g, err := gotui.NewGui(gotui.OutputNormal)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -29,16 +29,16 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
+	if err := g.MainLoop(); err != nil && err != gotui.ErrQuit {
 		log.Fatalln(err)
 	}
 }
 
-func layout(g *gocui.Gui) error {
+func layout(g *gotui.Gui) error {
 	maxX, _ := g.Size()
 
 	if v, err := g.SetView("help", maxX-23, 0, maxX-1, 5); err != nil {
-		if err != gocui.ErrUnknownView {
+		if err != gotui.ErrUnknownView {
 			return err
 		}
 		fmt.Fprintln(v, "KEYBINDINGS")
@@ -48,7 +48,7 @@ func layout(g *gocui.Gui) error {
 	}
 
 	if v, err := g.SetView("stdin", 0, 0, 80, 35); err != nil {
-		if err != gocui.ErrUnknownView {
+		if err != gotui.ErrUnknownView {
 			return err
 		}
 		if _, err := g.SetCurrentView("stdin"); err != nil {
@@ -64,22 +64,22 @@ func layout(g *gocui.Gui) error {
 	return nil
 }
 
-func initKeybindings(g *gocui.Gui) error {
-	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
+func initKeybindings(g *gotui.Gui) error {
+	if err := g.SetKeybinding("", gotui.KeyCtrlC, gotui.ModNone, quit); err != nil {
 		return err
 	}
-	if err := g.SetKeybinding("stdin", 'a', gocui.ModNone, autoscroll); err != nil {
+	if err := g.SetKeybinding("stdin", 'a', gotui.ModNone, autoscroll); err != nil {
 		return err
 	}
-	if err := g.SetKeybinding("stdin", gocui.KeyArrowUp, gocui.ModNone,
-		func(g *gocui.Gui, v *gocui.View) error {
+	if err := g.SetKeybinding("stdin", gotui.KeyArrowUp, gotui.ModNone,
+		func(g *gotui.Gui, v *gotui.View) error {
 			scrollView(v, -1)
 			return nil
 		}); err != nil {
 		return err
 	}
-	if err := g.SetKeybinding("stdin", gocui.KeyArrowDown, gocui.ModNone,
-		func(g *gocui.Gui, v *gocui.View) error {
+	if err := g.SetKeybinding("stdin", gotui.KeyArrowDown, gotui.ModNone,
+		func(g *gotui.Gui, v *gotui.View) error {
 			scrollView(v, 1)
 			return nil
 		}); err != nil {
@@ -88,16 +88,16 @@ func initKeybindings(g *gocui.Gui) error {
 	return nil
 }
 
-func quit(g *gocui.Gui, v *gocui.View) error {
-	return gocui.ErrQuit
+func quit(g *gotui.Gui, v *gotui.View) error {
+	return gotui.ErrQuit
 }
 
-func autoscroll(g *gocui.Gui, v *gocui.View) error {
+func autoscroll(g *gotui.Gui, v *gotui.View) error {
 	v.Autoscroll = true
 	return nil
 }
 
-func scrollView(v *gocui.View, dy int) error {
+func scrollView(v *gotui.View, dy int) error {
 	if v != nil {
 		v.Autoscroll = false
 		ox, oy := v.Origin()

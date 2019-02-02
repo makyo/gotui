@@ -1,6 +1,6 @@
-// Copyright 2014 The gocui Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// Copyright 2014 The gotui Authors. All rights reserved.
+// Use of this source code is governed by an MIT license.
+// The license can be found in the LICENSE file.
 
 // WARNING: tricky code just for testing purposes, do not use as reference.
 
@@ -10,26 +10,26 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/jroimartin/gocui"
+	"github.com/makyo/gotui"
 )
 
 var vbuf, buf string
 
-func quit(g *gocui.Gui, v *gocui.View) error {
+func quit(g *gotui.Gui, v *gotui.View) error {
 	vbuf = v.ViewBuffer()
 	buf = v.Buffer()
-	return gocui.ErrQuit
+	return gotui.ErrQuit
 }
 
-func overwrite(g *gocui.Gui, v *gocui.View) error {
+func overwrite(g *gotui.Gui, v *gotui.View) error {
 	v.Overwrite = !v.Overwrite
 	return nil
 }
 
-func layout(g *gocui.Gui) error {
+func layout(g *gotui.Gui) error {
 	_, maxY := g.Size()
 	if v, err := g.SetView("main", 0, 0, 20, maxY-1); err != nil {
-		if err != gocui.ErrUnknownView {
+		if err != gotui.ErrUnknownView {
 			return err
 		}
 		v.Editable = true
@@ -42,7 +42,7 @@ func layout(g *gocui.Gui) error {
 }
 
 func main() {
-	g, err := gocui.NewGui(gocui.OutputNormal)
+	g, err := gotui.NewGui(gotui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -52,14 +52,14 @@ func main() {
 
 	g.SetManagerFunc(layout)
 
-	if err := g.SetKeybinding("main", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
+	if err := g.SetKeybinding("main", gotui.KeyCtrlC, gotui.ModNone, quit); err != nil {
 		log.Panicln(err)
 	}
-	if err := g.SetKeybinding("main", gocui.KeyCtrlI, gocui.ModNone, overwrite); err != nil {
+	if err := g.SetKeybinding("main", gotui.KeyCtrlI, gotui.ModNone, overwrite); err != nil {
 		log.Panicln(err)
 	}
 
-	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
+	if err := g.MainLoop(); err != nil && err != gotui.ErrQuit {
 		log.Panicln(err)
 	}
 

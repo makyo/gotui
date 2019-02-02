@@ -1,14 +1,14 @@
-// Copyright 2014 The gocui Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// Copyright 2014 The gotui Authors. All rights reserved.
+// Use of this source code is governed by an MIT license.
+// The license can be found in the LICENSE file.
 
-package gocui
+package gotui
 
 import "errors"
 
 const maxInt = int(^uint(0) >> 1)
 
-// Editor interface must be satisfied by gocui editors.
+// Editor interface must be satisfied by gotui editors.
 type Editor interface {
 	Edit(v *View, key Key, ch rune, mod Modifier)
 }
@@ -26,7 +26,7 @@ func (f EditorFunc) Edit(v *View, key Key, ch rune, mod Modifier) {
 // DefaultEditor is the default editor.
 var DefaultEditor Editor = EditorFunc(simpleEditor)
 
-// simpleEditor is used as the default gocui editor.
+// simpleEditor is used as the default gotui editor.
 func simpleEditor(v *View, key Key, ch rune, mod Modifier) {
 	switch {
 	case ch != 0 && mod == 0:

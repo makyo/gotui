@@ -1,6 +1,6 @@
-// Copyright 2014 The gocui Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// Copyright 2014 The gotui Authors. All rights reserved.
+// Use of this source code is governed by an MIT license.
+// The license can be found in the LICENSE file.
 
 package main
 
@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jroimartin/gocui"
+	"github.com/makyo/gotui"
 )
 
 const NumGoroutines = 10
@@ -24,7 +24,7 @@ var (
 )
 
 func main() {
-	g, err := gocui.NewGui(gocui.OutputNormal)
+	g, err := gotui.NewGui(gotui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -41,16 +41,16 @@ func main() {
 		go counter(g)
 	}
 
-	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
+	if err := g.MainLoop(); err != nil && err != gotui.ErrQuit {
 		log.Panicln(err)
 	}
 
 	wg.Wait()
 }
 
-func layout(g *gocui.Gui) error {
+func layout(g *gotui.Gui) error {
 	if v, err := g.SetView("ctr", 2, 2, 12, 4); err != nil {
-		if err != gocui.ErrUnknownView {
+		if err != gotui.ErrUnknownView {
 			return err
 		}
 		fmt.Fprintln(v, "0")
@@ -58,19 +58,19 @@ func layout(g *gocui.Gui) error {
 	return nil
 }
 
-func keybindings(g *gocui.Gui) error {
-	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
+func keybindings(g *gotui.Gui) error {
+	if err := g.SetKeybinding("", gotui.KeyCtrlC, gotui.ModNone, quit); err != nil {
 		return err
 	}
 	return nil
 }
 
-func quit(g *gocui.Gui, v *gocui.View) error {
+func quit(g *gotui.Gui, v *gotui.View) error {
 	close(done)
-	return gocui.ErrQuit
+	return gotui.ErrQuit
 }
 
-func counter(g *gocui.Gui) {
+func counter(g *gotui.Gui) {
 	defer wg.Done()
 
 	for {
@@ -83,7 +83,7 @@ func counter(g *gocui.Gui) {
 			ctr++
 			mu.Unlock()
 
-			g.Update(func(g *gocui.Gui) error {
+			g.Update(func(g *gotui.Gui) error {
 				v, err := g.View("ctr")
 				if err != nil {
 					return err
