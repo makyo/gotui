@@ -443,8 +443,10 @@ func (v *View) draw() error {
 					continue
 				} else {
 					if v.WordWrap {
-						for n, wl := range line.wordWrap(maxX) {
-							vline := viewLine{linesX: maxX * n, linesY: i, line: wl}
+						pos := 0
+						for _, wl := range line.wordWrap(maxX) {
+							vline := viewLine{linesX: pos, linesY: i, line: wl}
+							pos += len(wl)
 							v.viewLines = append(v.viewLines, vline)
 						}
 					} else {
