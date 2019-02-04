@@ -176,14 +176,14 @@ func layout(g *gotui.Gui) error {
 		if err != gotui.ErrUnknownView {
 			return err
 		}
-		//b, err := ioutil.ReadFile("Mark.Twain-Tom.Sawyer-joined.txt")
-		b, err := ioutil.ReadFile("Mark.Twain-Tom.Sawyer.txt")
+		b, err := ioutil.ReadFile("Mark.Twain-Tom.Sawyer-joined.txt")
 		if err != nil {
 			panic(err)
 		}
 		fmt.Fprintf(v, "%s", b)
 		v.Editable = true
 		v.Wrap = true
+		v.WordWrap = true
 		if _, err := g.SetCurrentView("main"); err != nil {
 			return err
 		}
