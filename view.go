@@ -7,10 +7,18 @@ package gotui
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
+	"regexp"
 	"strings"
 
 	termbox "github.com/nsf/termbox-go"
+)
+
+var (
+	wordBoundary *regexp.Regexp = regexp.MustCompile("\\b")
+	wsPunct      *regexp.Regexp = regexp.MustCompile("^[\\s\\p{P}]+$")
+	leadingPunct *regexp.Regexp = regexp.MustCompile("^(\\s*)([\\[\\(\\<\\{\"'])$")
 )
 
 // A View is a window. It maintains its own internal buffer and cursor
@@ -32,7 +40,7 @@ type View struct {
 	// BgColor and FgColor allow to configure the background and foreground
 	// colors of the View.
 	BgColor, FgColor Attribute
-	
+
 	// TitleBgColor and TitleFgColor allow to configure the background and
 	// foreground colors of the title of the view.
 	TitleBgColor, TitleFgColor Attribute
@@ -69,6 +77,12 @@ type View struct {
 	// view's x-origin will be ignored.
 	Wrap bool
 
+	// If WordWrap is true, the content that is written to this view is
+	// wrapped when it is longer than its width, with every attempt made to
+	// wrap at at word boundaries, rather than character boundaries. Ignored
+	// unless Wrap is also true.
+	WordWrap bool
+
 	// If Autoscroll is true, the View will automatically scroll down when the
 	// text overflows. If true the view's y-origin will be ignored.
 	Autoscroll bool
@@ -100,6 +114,122 @@ func (l lineType) String() string {
 		str += string(c.chr)
 	}
 	return str
+}
+
+func (line lineType) wrap(width int) []lineType {
+	var wrappedLines []lineType
+	for n := 0; n <= len(line); n += width {
+		if len(line[n:]) <= width {
+			wrappedLines = append(wrappedLines, line[n:])
+		} else {
+			wrappedLines = append(wrappedLines, line[n:n+width])
+		}
+	}
+	return wrappedLines
+}
+
+// wrapLine splits a string into a slice of strings, each no longer than the
+// provided width.
+func (line lineType) wordWrap(width int) []lineType {
+	if len(line) <= width {
+		return []lineType{line}
+	}
+	var chunks []string
+	chunks = wordBoundary.Split(line.String(), -1)
+	var buf strings.Builder
+	var wrappedStrings []string
+	i := -1
+	for {
+		i++
+		if i >= len(chunks) {
+			break
+		}
+		curr := chunks[i]
+		if i+1 < len(chunks) {
+			if leadingPunct.MatchString(curr) && !wsPunct.MatchString(chunks[i+1]) {
+				currParts := leadingPunct.FindStringSubmatch(curr)
+				if len(currParts[1]) > 0 && i != 0 {
+					chunks[i-1] = chunks[i-1] + currParts[1]
+				}
+				curr = currParts[2] + chunks[i+1]
+				if i+2 < len(chunks) {
+					if i-1 < 0 {
+						chunks = append([]string{curr}, chunks[i+2:]...)
+					} else {
+						chunks = append(chunks[:i], append([]string{curr}, chunks[i+2:]...)...)
+					}
+				} else {
+					if i-1 < 0 {
+						chunks = []string{curr}
+					} else {
+						chunks = append(chunks[:i], curr)
+					}
+				}
+			}
+		}
+		if i > 0 {
+			if wsPunct.MatchString(curr) {
+				curr = chunks[i-1] + curr
+				if i < 2 {
+					if i+1 < len(chunks) {
+						chunks = append([]string{curr}, chunks[i+1:]...)
+					} else {
+						chunks = []string{curr}
+					}
+				} else {
+					if i+1 < len(chunks) {
+						chunks = append(chunks[:i-1], append([]string{curr}, chunks[i+1:]...)...)
+					} else {
+						chunks = append(chunks[:i-1], curr)
+					}
+				}
+			}
+		}
+	}
+	i = -1
+	for {
+		i++
+		if i >= len(chunks) {
+			break
+		}
+		curr := chunks[i]
+		if len(curr) > width {
+			if buf.Len() > 0 {
+				wrappedStrings = append(wrappedStrings, buf.String())
+				buf = strings.Builder{}
+			}
+			j := 0
+			for {
+				if len(curr[j:]) <= width {
+					fmt.Fprint(&buf, curr[j:])
+					break
+				} else {
+					wrappedStrings = append(wrappedStrings, curr[j:j+width])
+					j += width
+				}
+			}
+			continue
+		}
+		if buf.Len()+len(curr) >= width {
+			wrappedStrings = append(wrappedStrings, buf.String())
+			buf = strings.Builder{}
+		}
+		fmt.Fprint(&buf, curr)
+	}
+	if buf.Len() > 0 {
+		wrappedStrings = append(wrappedStrings, buf.String())
+	}
+	wrappedLines := make([]lineType, len(wrappedStrings))
+	pos := 0
+	for i, str := range wrappedStrings {
+		var wrappedLine lineType
+		for _, _ = range str {
+			wrappedLine = append(wrappedLine, line[pos])
+			pos++
+		}
+		wrappedLines[i] = wrappedLine
+	}
+	return wrappedLines
 }
 
 // newView returns a new View object.
@@ -304,19 +434,22 @@ func (v *View) draw() error {
 	}
 	if v.tainted {
 		v.viewLines = nil
-		for i, line := range v.lines {
+		for i, cells := range v.lines {
+			line := lineType(cells)
 			if v.Wrap {
 				if len(line) < maxX {
 					vline := viewLine{linesX: 0, linesY: i, line: line}
 					v.viewLines = append(v.viewLines, vline)
 					continue
 				} else {
-					for n := 0; n <= len(line); n += maxX {
-						if len(line[n:]) <= maxX {
-							vline := viewLine{linesX: n, linesY: i, line: line[n:]}
+					if v.WordWrap {
+						for n, wl := range line.wordWrap(maxX) {
+							vline := viewLine{linesX: maxX * n, linesY: i, line: wl}
 							v.viewLines = append(v.viewLines, vline)
-						} else {
-							vline := viewLine{linesX: n, linesY: i, line: line[n : n+maxX]}
+						}
+					} else {
+						for n, wl := range line.wrap(maxX) {
+							vline := viewLine{linesX: maxX * n, linesY: i, line: wl}
 							v.viewLines = append(v.viewLines, vline)
 						}
 					}
