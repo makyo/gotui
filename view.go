@@ -83,6 +83,11 @@ type View struct {
 	// unless Wrap is also true.
 	WordWrap bool
 
+	// If WordWrap is true, these specify how many cells to indent the first
+	// and subsequent buffer lines of a line of text, respectively. Ignored
+	// unless WordWrap is true.
+	IndentFirst, IndentSubsequent int
+
 	// If Autoscroll is true, the View will automatically scroll down when the
 	// text overflows. If true the view's y-origin will be ignored.
 	Autoscroll bool
@@ -130,10 +135,7 @@ func (line lineType) wrap(width int) []lineType {
 
 // wrapLine splits a string into a slice of strings, each no longer than the
 // provided width.
-func (line lineType) wordWrap(width int) []lineType {
-	if len(line) <= width {
-		return []lineType{line}
-	}
+func (line lineType) wordWrap(width, indentFirst, indentSubsequent int) []lineType {
 	var chunks []string
 	chunks = wordBoundary.Split(line.String(), -1)
 	var buf strings.Builder
@@ -187,6 +189,7 @@ func (line lineType) wordWrap(width int) []lineType {
 		}
 	}
 	i = -1
+	indent := indentFirst
 	for {
 		i++
 		if i >= len(chunks) {
@@ -210,9 +213,10 @@ func (line lineType) wordWrap(width int) []lineType {
 			}
 			continue
 		}
-		if buf.Len()+len(curr) >= width {
+		if indent+buf.Len()+len(curr) >= width {
 			wrappedStrings = append(wrappedStrings, buf.String())
 			buf = strings.Builder{}
+			indent = indentSubsequent
 		}
 		fmt.Fprint(&buf, curr)
 	}
@@ -223,6 +227,19 @@ func (line lineType) wordWrap(width int) []lineType {
 	pos := 0
 	for i, str := range wrappedStrings {
 		var wrappedLine lineType
+		if i == 0 {
+			firstCell := line[0]
+			firstCell.chr = ' '
+			for j := 0; j < indentFirst; j++ {
+				wrappedLine = append(wrappedLine, firstCell)
+			}
+		} else {
+			nextCell := line[pos]
+			nextCell.chr = ' '
+			for j := 0; j < indentSubsequent; j++ {
+				wrappedLine = append(wrappedLine, nextCell)
+			}
+		}
 		for _, _ = range str {
 			wrappedLine = append(wrappedLine, line[pos])
 			pos++
@@ -437,14 +454,14 @@ func (v *View) draw() error {
 		for i, cells := range v.lines {
 			line := lineType(cells)
 			if v.Wrap {
-				if len(line) < maxX {
+				if (v.WordWrap && len(line) == 0) || (!v.WordWrap && len(line) < maxX) {
 					vline := viewLine{linesX: 0, linesY: i, line: line}
 					v.viewLines = append(v.viewLines, vline)
 					continue
 				} else {
 					if v.WordWrap {
 						pos := 0
-						for _, wl := range line.wordWrap(maxX) {
+						for _, wl := range line.wordWrap(maxX, v.IndentFirst, v.IndentSubsequent) {
 							vline := viewLine{linesX: pos, linesY: i, line: wl}
 							pos += len(wl)
 							v.viewLines = append(v.viewLines, vline)
