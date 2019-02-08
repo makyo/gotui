@@ -184,6 +184,8 @@ func layout(g *gotui.Gui) error {
 		v.Editable = true
 		v.Wrap = true
 		v.WordWrap = true
+		v.IndentFirst = 2
+		v.IndentSubsequent = 10
 		if _, err := g.SetCurrentView("main"); err != nil {
 			return err
 		}
