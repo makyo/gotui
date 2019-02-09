@@ -7,5 +7,5 @@ import (
 )
 
 func main() {
-	fmt.Printf("%s", ansi.CapabilityCheck.String())
+	fmt.Print(ansi.CapabilityCheck)
 }

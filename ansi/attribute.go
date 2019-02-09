@@ -4,18 +4,31 @@ import (
 	"fmt"
 )
 
+// Attribute describes an attribute that a string of runes might have.
+// (e.g: bold, undelrine, etc)
 type Attribute struct {
+	// ANSI codes usually have one code to turn a functionality on, and
+	// another to turn it off. These are labeled start and end here as they
+	// often show up in pairs like this rather than being left on. The
+	// universal end, of course, is 0.
 	start, end uint8
 }
 
+// Reset is the ANSI code to reset all attributes and colors of a string.
+const Reset string = "\x1b[0m"
+
+// Start prints the start ANSI escape code for the attribute.
 func (a Attribute) Start() string {
 	return fmt.Sprintf("\x1b[%dm", a.start)
 }
 
+// End prints the ANSI escape code to turn off the attribute's functionality.
 func (a Attribute) End() string {
 	return fmt.Sprintf("\x1b[%dm", a.end)
 }
 
+// Apply turns on the attribute for the given string by surrounding it with
+// the start and end codes.
 func (a Attribute) Apply(s string) string {
 	return fmt.Sprintf("%s%s%s", a.Start(), s, a.End())
 }

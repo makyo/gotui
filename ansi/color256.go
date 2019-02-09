@@ -6,29 +6,18 @@ import (
 	"strconv"
 )
 
-var (
-	hslRegexp      *regexp.Regexp = regexp.MustCompile("^(?i)hsl\\((\\d+),\\s*(\\d+)%,\\s*(\\d+)\\)$")
-	rgbRegexp                     = regexp.MustCompile("^(?i)rgb\\((\\d+),\\s*(\\d+),\\s*(\\d+)\\)$")
-	shortRGBRegexp                = regexp.MustCompile("rgb(\\d{3})")
-)
-
+// hsl represents a Hue/Saturation/Lightness specification for a color.
 type hsl struct {
 	H    uint16
 	S, L uint8
 }
 
-func (c *hsl) String() string {
-	return fmt.Sprintf("hsl(%d, %d%%, %d%%)", c.H, c.S, c.L)
-}
-
+// rgb represents a Red/Green/Blue specification for a color.
 type rgb struct {
 	R, G, B uint8
 }
 
-func (c *rgb) String() string {
-	return fmt.Sprintf("rgb(%d, %d, %d)", c.R, c.G, c.B)
-}
-
+// color256 represents an 8-bit color and the ways in which it might be found.
 type color256 struct {
 	Id uint8
 	Name,
@@ -37,98 +26,136 @@ type color256 struct {
 	RGB rgb
 }
 
+// FGStart returns the ANSI code to start writing runes in this color
+// as the foreground.
 func (c color256) FGStart() string {
 	return fmt.Sprintf("\x1b[38;5;%dm", c.Id)
 }
 
+// BGStart returns the ANSI code to start writing runes in this color
+// as the background.
 func (c color256) BGStart() string {
 	return fmt.Sprintf("\x1b[48;5;%dm", c.Id)
 }
 
+// FG turns the text for the provided string the specified color by surrounding
+// it with the start and end codes.
 func (c color256) FG(s string) string {
 	return fmt.Sprintf("%s%s%s", c.FGStart(), s, FGEnd)
 }
 
+// BG turns the background for the provided string the specified color by
+// surrounding it with the start and end codes.
 func (c color256) BG(s string) string {
 	return fmt.Sprintf("%s%s%s", c.BGStart(), s, BGEnd)
 }
 
 type colors256 []color256
 
-func (c colors256) Find(what string) (color256, error) {
+// Find returns the color with the given name, or an error if one could not be
+// found. It accepts:
+// * The color name
+// * The color number as specified in the escape code
+// * A CSS-style hex string (#rrggbb)
+// * A CSS-style HSL specification (hsl(h, s%, l%))
+// * A CSS style RGB specification (rgb(r, g, b))
+// * A short-code rgb specification (rgb###)
+// Note that, despite the wide array of possibilities provided by the CSS-style
+// arguments, not every one exists in a 256-color set, so providing just any
+// argument will not get you a color.
+func (c colors256) Find(what string) (Color, error) {
 	i, err := strconv.Atoi(what)
 	if err == nil {
-		return c.FindId(i)
+		return c.FindById(i)
+	} else if len(what) == 6 && what[:3] == "rgb" {
+		return c.FindByShortRGB(what)
+	} else if matches := hexRegexp.FindAllStringSubmatch(what, -1); len(matches) == 1 && len(matches[0]) == 4 {
+		return c.FindByHex(what)
+	} else if matches := rgbRegexp.FindAllStringSubmatch(what, -1); len(matches) == 1 && len(matches[0]) == 4 {
+		var r, g, b int
+		r, _ = strconv.Atoi(matches[0][1])
+		g, _ = strconv.Atoi(matches[0][2])
+		b, _ = strconv.Atoi(matches[0][3])
+		return c.FindByRGB(r, g, b)
+	} else if matches := hslRegexp.FindAllStringSubmatch(what, -1); len(matches) == 1 && len(matches[0]) == 4 {
+		var h, s, l int
+		h, _ = strconv.Atoi(matches[0][1])
+		s, _ = strconv.Atoi(matches[0][2])
+		l, _ = strconv.Atoi(matches[0][3])
+		return c.FindByHSL(h, s, l)
 	}
-	if string(what[0]) == "#" {
-		return c.FindHex(what)
-	}
-	if len(what) > 4 {
-		switch what[:4] {
-		case "rgb(":
-			return c.FindRGB(what)
-			break
-		case "hsl(":
-			return c.FindHSL(what)
-			break
-		}
-	}
-	return c.FindName(what)
+	return c.FindByName(what)
 }
 
-func (c colors256) FindRGB(what string) (color256, error) {
-	var r, g, b int
-	if matches := rgbRegexp.FindAllString(what, -1); len(matches) == 3 {
-		r, _ = strconv.Atoi(matches[0])
-		g, _ = strconv.Atoi(matches[1])
-		b, _ = strconv.Atoi(matches[2])
+// findByShortRGB finds a color by RGB short code, which take the form of rgb###
+// where each # is a digit from 0-5 inclusive. This works like CSS color codes,
+// in that rgb000 is black, and rgb555 is white. This covers 216 of the 256
+// colors in this space.
+func (c colors256) FindByShortRGB(what string) (Color, error) {
+	r, err := strconv.Atoi(string(what[3]))
+	if err != nil {
+		return nil, err
 	}
+	g, err := strconv.Atoi(string(what[4]))
+	if err != nil {
+		return nil, err
+	}
+	b, err := strconv.Atoi(string(what[5]))
+	if err != nil {
+		return nil, err
+	}
+	return c.FindById(16 + r*36 + 6*g + b)
+}
+
+// FindByRGB finds a color based on its CSS red/blue/green value.
+func (c colors256) FindByRGB(r, g, b int) (Color, error) {
 	for _, col := range c {
 		if int(col.RGB.R) == r && int(col.RGB.G) == g && int(col.RGB.B) == b {
 			return col, nil
 		}
 	}
-	return color256{}, ColorNotFound
+	return nil, ColorNotFound
 }
 
-func (c colors256) FindHSL(what string) (color256, error) {
-	var h, s, l int
-	if matches := hslRegexp.FindAllString(what, -1); len(matches) == 3 {
-		h, _ = strconv.Atoi(matches[0])
-		s, _ = strconv.Atoi(matches[1])
-		l, _ = strconv.Atoi(matches[2])
-	}
+// FindByHSL finds a color based on its CSS hue/saturation/lightness value.
+func (c colors256) FindByHSL(h, s, l int) (Color, error) {
 	for _, col := range c {
 		if int(col.HSL.H) == h && int(col.HSL.S) == s && int(col.HSL.L) == l {
 			return col, nil
 		}
 	}
-	return color256{}, ColorNotFound
+	return nil, ColorNotFound
 }
 
-func (c colors256) FindHex(what string) (color256, error) {
+// FindByHex finds a color based on its CSS hex value.
+func (c colors256) FindByHex(what string) (Color, error) {
 	for _, col := range c {
 		if b, _ := regexp.MatchString(fmt.Sprintf("(?i)%s", col.Hex), what); b {
 			return col, nil
 		}
 	}
-	return color256{}, ColorNotFound
+	return nil, ColorNotFound
 }
 
-func (c colors256) FindId(what int) (color256, error) {
+// FindById finds a color based on its ID, where ID is:
+//     0-  7:  standard colors (as in ESC [ 30–37 m)
+//     8- 15:  high intensity colors (as in ESC [ 90–97 m)
+//    16-231:  6 × 6 × 6 cube (216 colors): 16 + 36 × r + 6 × g + b (0 ≤ r, g, b ≤ 5)
+//   232-255:  grayscale from black to white in 24 steps
+func (c colors256) FindById(what int) (Color, error) {
 	if what >= 0 && what < len(c) {
 		return c[what], nil
 	}
-	return color256{}, ColorNotFound
+	return nil, ColorNotFound
 }
 
-func (c colors256) FindName(what string) (color256, error) {
+func (c colors256) FindByName(what string) (Color, error) {
 	for _, col := range c {
 		if b, _ := regexp.MatchString(fmt.Sprintf("(?i)%s", col.Name), what); b {
 			return col, nil
 		}
 	}
-	return color256{}, ColorNotFound
+	return nil, ColorNotFound
 }
 
 var Colors256 colors256 = []color256{
