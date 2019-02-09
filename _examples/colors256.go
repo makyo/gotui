@@ -39,10 +39,10 @@ func layout(g *gotui.Gui) error {
 
 		// 256-colors escape codes
 		for i := 0; i < 256; i++ {
-			str := fmt.Sprintf("\x1b[48;5;%dm\x1b[30m%3d\x1b[0m ", i, i)
-			str += fmt.Sprintf("\x1b[38;5;%dm%3d\x1b[0m ", i, i)
+			str := fmt.Sprintf("\x1b[48;5;%dm\x1b[30m%3x\x1b[0m ", i, i)
+			str += fmt.Sprintf("\x1b[38;5;%dm\x1b[9m%3x\x1b[0m ", i, i)
 
-			if (i+1)%10 == 0 {
+			if (i+9)%6 == 0 {
 				str += "\n"
 			}
 
