@@ -15,10 +15,12 @@ import (
 	termbox "github.com/nsf/termbox-go"
 )
 
+const (
+	chunkPattern string = `(\s|\S{%d}|\S+\s|\S+[/-]|\S+)`
+)
+
 var (
-	wordBoundary *regexp.Regexp = regexp.MustCompile("\\b")
-	wsPunct      *regexp.Regexp = regexp.MustCompile("^[\\s\\p{P}]+$")
-	leadingPunct *regexp.Regexp = regexp.MustCompile("^(\\s*)([\\[\\(\\<\\{\"'])$")
+	wrapInitialRE, wrapSubsequentRE *regexp.Regexp
 )
 
 // A View is a window. It maintains its own internal buffer and cursor
@@ -136,114 +138,76 @@ func (line lineType) wrap(width int) []lineType {
 // wrapLine splits a string into a slice of strings, each no longer than the
 // provided width.
 func (line lineType) wordWrap(width, indentFirst, indentSubsequent int) []lineType {
-	var chunks []string
-	chunks = wordBoundary.Split(line.String(), -1)
-	var buf strings.Builder
-	var wrappedStrings []string
-	i := -1
-	for {
-		i++
-		if i >= len(chunks) {
+	// If the line is already short enough, return.
+	if len(line)+indentFirst <= width {
+		var wrappedLine lineType
+		firstCell := line[0]
+		firstCell.chr = ' '
+		for j := 0; j < indentFirst; j++ {
+			wrappedLine = append(wrappedLine, firstCell)
+		}
+		wrappedLine = append(wrappedLine, line...)
+		return []lineType{wrappedLine}
+	}
+
+	// Set up a list of points at which to break the string.
+	breakpoints := []int{}
+
+	// Get the breakpoint for the first line, which may have a different indent
+	// level than the following lines.
+	initialChonks := wrapInitialRE.FindAllString(line.String(), -1)
+	currLength := 0
+	for _, chonk := range initialChonks {
+		if indentFirst+currLength+len(chonk) <= width {
+			currLength += len(chonk)
+		} else {
+			breakpoints = append(breakpoints, currLength)
 			break
 		}
-		curr := chunks[i]
-		if i+1 < len(chunks) {
-			if leadingPunct.MatchString(curr) && !wsPunct.MatchString(chunks[i+1]) {
-				currParts := leadingPunct.FindStringSubmatch(curr)
-				if len(currParts[1]) > 0 && i != 0 {
-					chunks[i-1] = chunks[i-1] + currParts[1]
-				}
-				curr = currParts[2] + chunks[i+1]
-				if i+2 < len(chunks) {
-					if i-1 < 0 {
-						chunks = append([]string{curr}, chunks[i+2:]...)
-					} else {
-						chunks = append(chunks[:i], append([]string{curr}, chunks[i+2:]...)...)
-					}
-				} else {
-					if i-1 < 0 {
-						chunks = []string{curr}
-					} else {
-						chunks = append(chunks[:i], curr)
-					}
-				}
-			}
-		}
-		if i > 0 {
-			if wsPunct.MatchString(curr) {
-				curr = chunks[i-1] + curr
-				if i < 2 {
-					if i+1 < len(chunks) {
-						chunks = append([]string{curr}, chunks[i+1:]...)
-					} else {
-						chunks = []string{curr}
-					}
-				} else {
-					if i+1 < len(chunks) {
-						chunks = append(chunks[:i-1], append([]string{curr}, chunks[i+1:]...)...)
-					} else {
-						chunks = append(chunks[:i-1], curr)
-					}
-				}
-			}
+	}
+
+	// Get the breakpoints for each of the subsequent lines.
+	remainder := line.String()[currLength:len(line)]
+	subsequentChonks := wrapSubsequentRE.FindAllString(remainder, -1)
+	currLength = 0
+	for _, chonk := range subsequentChonks {
+		if indentSubsequent+currLength+len(chonk) <= width {
+			currLength += len(chonk)
+		} else {
+			breakpoints = append(breakpoints, currLength)
+			currLength = len(chonk)
 		}
 	}
-	i = -1
-	indent := indentFirst
-	for {
-		i++
-		if i >= len(chunks) {
-			break
-		}
-		curr := chunks[i]
-		if len(curr) > width {
-			if buf.Len() > 0 {
-				wrappedStrings = append(wrappedStrings, buf.String())
-				buf = strings.Builder{}
-			}
-			j := 0
-			for {
-				if len(curr[j:]) <= width {
-					fmt.Fprint(&buf, curr[j:])
-					break
-				} else {
-					wrappedStrings = append(wrappedStrings, curr[j:j+width])
-					j += width
-				}
-			}
-			continue
-		}
-		if indent+buf.Len()+len(curr) >= width {
-			wrappedStrings = append(wrappedStrings, buf.String())
-			buf = strings.Builder{}
-			indent = indentSubsequent
-		}
-		fmt.Fprint(&buf, curr)
-	}
-	if buf.Len() > 0 {
-		wrappedStrings = append(wrappedStrings, buf.String())
-	}
-	wrappedLines := make([]lineType, len(wrappedStrings))
+	breakpoints = append(breakpoints, currLength)
+
+	// Apply those breakpoints to the line itself, generating a slice of lines.
+	wrappedLines := make([]lineType, len(breakpoints))
 	pos := 0
-	for i, str := range wrappedStrings {
+	for i, bp := range breakpoints {
 		var wrappedLine lineType
 		if i == 0 {
+			// Indent the first line.
 			firstCell := line[0]
 			firstCell.chr = ' '
 			for j := 0; j < indentFirst; j++ {
 				wrappedLine = append(wrappedLine, firstCell)
 			}
 		} else {
+			// Indent subsequent lines.
 			nextCell := line[pos]
 			nextCell.chr = ' '
 			for j := 0; j < indentSubsequent; j++ {
 				wrappedLine = append(wrappedLine, nextCell)
 			}
 		}
-		for _, _ = range str {
+
+		// Append cells up until the next breakpoint.
+		for j := 0; j < bp; j++ {
 			wrappedLine = append(wrappedLine, line[pos])
 			pos++
 		}
+
+		// Add the wrapped line to the list of lines.
 		wrappedLines[i] = wrappedLine
 	}
 	return wrappedLines
@@ -450,6 +414,8 @@ func (v *View) draw() error {
 		v.ox = 0
 	}
 	if v.tainted {
+		wrapInitialRE = regexp.MustCompile(fmt.Sprintf(chunkPattern, maxX-v.IndentFirst))
+		wrapSubsequentRE = regexp.MustCompile(fmt.Sprintf(chunkPattern, maxX-v.IndentSubsequent))
 		v.viewLines = nil
 		for i, cells := range v.lines {
 			line := lineType(cells)
